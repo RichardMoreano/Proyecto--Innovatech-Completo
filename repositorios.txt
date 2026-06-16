@@ -1,0 +1,7 @@
+https://github.com/RichardMoreano/innovatech-frontend
+https://github.com/RichardMoreano/innovatech-bff
+https://github.com/RichardMoreano/innovatech-ms-gestion-proyectos
+https://github.com/RichardMoreano/innovatech-ms-gestion-recursos
+https://github.com/RichardMoreano/innovatech-ms-autenticacion
+https://github.com/RichardMoreano/innovatech-ms-monitoreo-analitica
+https://github.com/RichardMoreano/innovatech-api-gateway

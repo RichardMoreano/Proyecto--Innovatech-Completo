@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-InnovatechMicroserviciosBaseApplication<innovatech-microservicios-base>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "cl.duoc.innovatech.innovatech_microservicios_base.InnovatechMicroserviciosBaseApplication",
+            "projectName": "innovatech-microservicios-base",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}

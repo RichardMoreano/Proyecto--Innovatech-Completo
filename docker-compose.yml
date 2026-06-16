@@ -1,0 +1,141 @@
+services:
+  innovatech-postgres:
+    image: postgres:15
+    container_name: innovatech-postgres
+    environment:
+      POSTGRES_DB: innovatech_proyectos_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: '15.RERM#@Vs'
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d innovatech_proyectos_db || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  innovatech-api-gateway:
+    build:
+      context: ./innovatech-api-gateway
+      dockerfile: Dockerfile
+    image: innovatech-api-gateway:local
+    ports:
+      - '9000:9000'
+    environment:
+      - BFF_URL=http://innovatech-bff:8080
+      - PROYECTOS_URL=http://innovatech-ms-gestion-proyectos:8081
+      - RECURSOS_URL=http://innovatech-ms-gestion-recursos:8082
+      - AUTH_URL=http://innovatech-ms-autenticacion:8083
+      - MONITOREO_URL=http://innovatech-ms-monitoreo-analitica:8084
+    depends_on:
+      innovatech-bff:
+        condition: service_healthy
+      innovatech-ms-gestion-proyectos:
+        condition: service_healthy
+      innovatech-ms-gestion-recursos:
+        condition: service_healthy
+      innovatech-ms-autenticacion:
+        condition: service_healthy
+      innovatech-ms-monitoreo-analitica:
+        condition: service_healthy
+
+  innovatech-bff:
+    build:
+      context: ./innovatech-bff
+      dockerfile: Dockerfile
+    image: innovatech-bff:local
+    ports:
+      - '8080:8080'
+    environment:
+      - SERVICIO_PROYECTO_URL=http://innovatech-ms-gestion-proyectos:8081/api/proyectos
+      - SERVICIO_RECURSO_URL=http://innovatech-ms-gestion-recursos:8082/api/recursos
+      - MONITOREO_URL=http://innovatech-ms-monitoreo-analitica:8084/api/monitoreo/dashboard
+    depends_on:
+      innovatech-ms-gestion-proyectos:
+        condition: service_healthy
+      innovatech-ms-gestion-recursos:
+        condition: service_healthy
+      innovatech-ms-monitoreo-analitica:
+        condition: service_healthy
+
+  innovatech-ms-autenticacion:
+    build:
+      context: ./innovatech-ms-autenticacion
+      dockerfile: Dockerfile
+    image: innovatech-ms-autenticacion:local
+    ports:
+      - '8083:8083'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  innovatech-ms-gestion-proyectos:
+    build:
+      context: ./innovatech-ms-gestion-proyectos
+      dockerfile: Dockerfile
+    image: innovatech-ms-gestion-proyectos:local
+    ports:
+      - '8081:8081'
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://innovatech-postgres:5432/innovatech_proyectos_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=15.RERM#@Vs
+    depends_on:
+      innovatech-postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  innovatech-ms-gestion-recursos:
+    build:
+      context: ./innovatech-ms-gestion-recursos
+      dockerfile: Dockerfile
+    image: innovatech-ms-gestion-recursos:local
+    ports:
+      - '8082:8082'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  innovatech-ms-monitoreo-analitica:
+    build:
+      context: ./innovatech-ms-monitoreo-analitica
+      dockerfile: Dockerfile
+    image: innovatech-ms-monitoreo-analitica:local
+    ports:
+      - '8084:8084'
+    environment:
+      - SERVICIO_PROYECTO_URL=http://innovatech-ms-gestion-proyectos:8081/api/proyectos
+      - SERVICIO_RECURSO_URL=http://innovatech-ms-gestion-recursos:8082/api/recursos
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  innovatech-frontend:
+    build:
+      context: ./innovatech-frontend
+      dockerfile: Dockerfile
+    image: innovatech-frontend:local
+    ports:
+      - '5173:80'
+    depends_on:
+      - innovatech-api-gateway
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  default:
+    name: innovatech-network
