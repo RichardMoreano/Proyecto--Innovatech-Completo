@@ -1,9 +1,5 @@
-version: '3.8'
-
 services:
-  # ==========================================
-  # BASE DE DATOS CONTENEDORIZADA
-  # ==========================================
+  # Base de Datos Relacional PostgreSQL
   postgres-db:
     image: postgres:15-alpine
     container_name: innovatech-db
@@ -16,9 +12,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
-  # ==========================================
-  # MICROSERVICIOS DE NEGOCIO (BACKEND V2)
-  # ==========================================
+  # Microservicio de Autenticación
   ms-auth:
     build: ./innovatech-ms-autenticacion
     container_name: ms-auth
@@ -32,6 +26,7 @@ services:
     depends_on:
       - postgres-db
 
+  # Microservicio de Gestión de Proyectos
   ms-gestion-proyectos:
     build: ./innovatech-ms-gestion-proyectos
     container_name: ms-gestion-proyectos
@@ -44,23 +39,50 @@ services:
     depends_on:
       - postgres-db
 
-  # ==========================================
-  # CAPA COMPUESTA (BFF CSR)
-  # ==========================================
+  # Microservicio de Gestión de Recursos
+  ms-gestion-recursos:
+    build: ./innovatech-ms-gestion-recursos
+    container_name: ms-gestion-recursos
+    ports:
+      - "8086:8082" # Redirecciona puerto 8086 externo al 8082 interno de Spring
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/innovatech_db
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: supersecretpassword
+    depends_on:
+      - postgres-db
+
+  # Microservicio de Monitoreo y Analítica
+  ms-monitoreo-analitica:
+    build: ./innovatech-ms-monitoreo-analitica
+    container_name: ms-monitoreo-analitica
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/innovatech_db
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: supersecretpassword
+    depends_on:
+      - postgres-db
+
+  # Capa Intermedia Compuesta (BFF)
   innovatech-bff:
     build: ./innovatech-bff
     container_name: innovatech-bff
     ports:
       - "8080:8080"
     environment:
-      PROYECTOS_URL: http://ms-gestion-proyectos:8081
       JWT_SECRET: innovatech2026_fullstack3_RichardMoreano
+      # Inyecciones de red internas para comunicación inter-contenedor
+      PROYECTOS_URL: http://ms-gestion-proyectos:8081
+      RECURSOS_URL: http://ms-gestion-recursos:8082
+      MONITOREO_URL: http://ms-monitoreo-analitica:8084
     depends_on:
       - ms-gestion-proyectos
+      - ms-gestion-recursos
+      - ms-monitoreo-analitica
 
-  # ==========================================
-  # PUERTA DE ENTRADA (API GATEWAY CENTRAL)
-  # ==========================================
+  # Puerta de Entrada Única (API Gateway)
   api-gateway:
     build: ./innovatech-api-gateway
     container_name: api-gateway
@@ -74,16 +96,14 @@ services:
       - ms-auth
       - innovatech-bff
 
-  # ==========================================
-  # INTERFAZ DE USUARIO (FRONTEND NEXT.JS)
-  # ==========================================
+  # Interfaz de Usuario
   innovatech-frontend:
     build: ./innovatech-frontend
     container_name: innovatech-frontend
     ports:
       - "3000:3000"
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8083/api/v2
+      NEXT_PUBLIC_API_URL: http://localhost:8083
     depends_on:
       - api-gateway
 
