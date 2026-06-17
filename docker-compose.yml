@@ -1,141 +1,89 @@
 services:
-  innovatech-postgres:
-    image: postgres:15
-    container_name: innovatech-postgres
-    environment:
-      POSTGRES_DB: innovatech_proyectos_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: '15.RERM#@Vs'
+  # ==========================================
+  # SECCIÓN DE BASES DE DATOS
+  # ==========================================
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: innovatech-db
     ports:
-      - '5432:5432'
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: innovatech_db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: supersecretpassword
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d innovatech_proyectos_db || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - pgdata:/var/lib/postgresql/data
 
-  innovatech-api-gateway:
-    build:
-      context: ./innovatech-api-gateway
-      dockerfile: Dockerfile
-    image: innovatech-api-gateway:local
+  # ==========================================
+  # MICROSERVICIOS DE NEGOCIO (BACKEND)
+  # ==========================================
+  ms-auth:
+    build: ./innovatech-ms-auth # Revisa que coincida con el nombre de tu carpeta
+    container_name: ms-auth
     ports:
-      - '9000:9000'
+      - "8082:8082"
     environment:
-      - BFF_URL=http://innovatech-bff:8080
-      - PROYECTOS_URL=http://innovatech-ms-gestion-proyectos:8081
-      - RECURSOS_URL=http://innovatech-ms-gestion-recursos:8082
-      - AUTH_URL=http://innovatech-ms-autenticacion:8083
-      - MONITOREO_URL=http://innovatech-ms-monitoreo-analitica:8084
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/innovatech_db
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: supersecretpassword
+      JWT_SECRET: innovatech2026_fullstack3_RichardMoreano
     depends_on:
-      innovatech-bff:
-        condition: service_healthy
-      innovatech-ms-gestion-proyectos:
-        condition: service_healthy
-      innovatech-ms-gestion-recursos:
-        condition: service_healthy
-      innovatech-ms-autenticacion:
-        condition: service_healthy
-      innovatech-ms-monitoreo-analitica:
-        condition: service_healthy
+      - postgres-db
 
+  ms-gestion-proyectos:
+    build: ./innovatech-ms-proyectos # Revisa que coincida con el nombre de tu carpeta
+    container_name: ms-gestion-proyectos
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/innovatech_db
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: supersecretpassword
+    depends_on:
+      - postgres-db
+
+  # ==========================================
+  # CAPA COMPUESTA (BFF)
+  # ==========================================
   innovatech-bff:
-    build:
-      context: ./innovatech-bff
-      dockerfile: Dockerfile
-    image: innovatech-bff:local
+    build: ./innovatech-bff
+    container_name: innovatech-bff
     ports:
-      - '8080:8080'
+      - "8080:8080"
     environment:
-      - SERVICIO_PROYECTO_URL=http://innovatech-ms-gestion-proyectos:8081/api/proyectos
-      - SERVICIO_RECURSO_URL=http://innovatech-ms-gestion-recursos:8082/api/recursos
-      - MONITOREO_URL=http://innovatech-ms-monitoreo-analitica:8084/api/monitoreo/dashboard
+      PROYECTOS_URL: http://ms-gestion-proyectos:8081
+      JWT_SECRET: innovatech2026_fullstack3_RichardMoreano
     depends_on:
-      innovatech-ms-gestion-proyectos:
-        condition: service_healthy
-      innovatech-ms-gestion-recursos:
-        condition: service_healthy
-      innovatech-ms-monitoreo-analitica:
-        condition: service_healthy
+      - ms-gestion-proyectos
 
-  innovatech-ms-autenticacion:
-    build:
-      context: ./innovatech-ms-autenticacion
-      dockerfile: Dockerfile
-    image: innovatech-ms-autenticacion:local
+  # ==========================================
+  # PUERTA DE ENTRADA (API GATEWAY)
+  # ==========================================
+  api-gateway:
+    build: ./innovatech-gateway # Revisa que coincida con el nombre de tu carpeta
+    container_name: api-gateway
     ports:
-      - '8083:8083'
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  innovatech-ms-gestion-proyectos:
-    build:
-      context: ./innovatech-ms-gestion-proyectos
-      dockerfile: Dockerfile
-    image: innovatech-ms-gestion-proyectos:local
-    ports:
-      - '8081:8081'
+      - "8083:8083"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://innovatech-postgres:5432/innovatech_proyectos_db
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=15.RERM#@Vs
+      AUTH_SERVICE_URL: http://ms-auth:8082
+      BFF_SERVICE_URL: http://innovatech-bff:8080
+      JWT_SECRET: innovatech2026_fullstack3_RichardMoreano
     depends_on:
-      innovatech-postgres:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - ms-auth
+      - innovatech-bff
 
-  innovatech-ms-gestion-recursos:
-    build:
-      context: ./innovatech-ms-gestion-recursos
-      dockerfile: Dockerfile
-    image: innovatech-ms-gestion-recursos:local
-    ports:
-      - '8082:8082'
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  innovatech-ms-monitoreo-analitica:
-    build:
-      context: ./innovatech-ms-monitoreo-analitica
-      dockerfile: Dockerfile
-    image: innovatech-ms-monitoreo-analitica:local
-    ports:
-      - '8084:8084'
-    environment:
-      - SERVICIO_PROYECTO_URL=http://innovatech-ms-gestion-proyectos:8081/api/proyectos
-      - SERVICIO_RECURSO_URL=http://innovatech-ms-gestion-recursos:8082/api/recursos
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
+  # ==========================================
+  # INTERFAZ DE USUARIO (FRONTEND)
+  # ==========================================
   innovatech-frontend:
-    build:
-      context: ./innovatech-frontend
-      dockerfile: Dockerfile
-    image: innovatech-frontend:local
+    build: ./innovatech-frontend
+    container_name: innovatech-frontend
     ports:
-      - '5173:80'
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8083/api/v2
     depends_on:
-      - innovatech-api-gateway
+      - api-gateway
 
 volumes:
-  postgres_data:
-    driver: local
-
-networks:
-  default:
-    name: innovatech-network
+  pgdata:
