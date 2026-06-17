@@ -20,7 +20,7 @@ services:
   # MICROSERVICIOS DE NEGOCIO (BACKEND V2)
   # ==========================================
   ms-auth:
-    build: ./innovatech-ms-autenticacion # <-- Ajustado a tu carpeta real
+    build: ./innovatech-ms-autenticacion
     container_name: ms-auth
     ports:
       - "8082:8082"
@@ -33,7 +33,7 @@ services:
       - postgres-db
 
   ms-gestion-proyectos:
-    build: ./innovatech-ms-gestion-proyectos # <-- Ajustado a tu carpeta real
+    build: ./innovatech-ms-gestion-proyectos
     container_name: ms-gestion-proyectos
     ports:
       - "8081:8081"
@@ -48,7 +48,7 @@ services:
   # CAPA COMPUESTA (BFF CSR)
   # ==========================================
   innovatech-bff:
-    build: ./innovatech-bff # <-- Coincide con tu carpeta real
+    build: ./innovatech-bff
     container_name: innovatech-bff
     ports:
       - "8080:8080"
@@ -62,7 +62,7 @@ services:
   # PUERTA DE ENTRADA (API GATEWAY CENTRAL)
   # ==========================================
   api-gateway:
-    build: ./innovatech-api-gateway # <-- Ajustado a tu carpeta real
+    build: ./innovatech-api-gateway
     container_name: api-gateway
     ports:
       - "8083:8083"
@@ -78,7 +78,7 @@ services:
   # INTERFAZ DE USUARIO (FRONTEND NEXT.JS)
   # ==========================================
   innovatech-frontend:
-    build: ./innovatech-frontend # <-- Coincide con tu carpeta real
+    build: ./innovatech-frontend
     container_name: innovatech-frontend
     ports:
       - "3000:3000"
