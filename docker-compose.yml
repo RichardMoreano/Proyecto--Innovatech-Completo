@@ -1,6 +1,8 @@
+version: '3.8'
+
 services:
   # ==========================================
-  # SECCIÓN DE BASES DE DATOS
+  # BASE DE DATOS CONTENEDORIZADA
   # ==========================================
   postgres-db:
     image: postgres:15-alpine
@@ -15,10 +17,10 @@ services:
       - pgdata:/var/lib/postgresql/data
 
   # ==========================================
-  # MICROSERVICIOS DE NEGOCIO (BACKEND)
+  # MICROSERVICIOS DE NEGOCIO (BACKEND V2)
   # ==========================================
   ms-auth:
-    build: ./innovatech-ms-auth # Revisa que coincida con el nombre de tu carpeta
+    build: ./innovatech-ms-autenticacion # <-- Ajustado a tu carpeta real
     container_name: ms-auth
     ports:
       - "8082:8082"
@@ -31,7 +33,7 @@ services:
       - postgres-db
 
   ms-gestion-proyectos:
-    build: ./innovatech-ms-proyectos # Revisa que coincida con el nombre de tu carpeta
+    build: ./innovatech-ms-gestion-proyectos # <-- Ajustado a tu carpeta real
     container_name: ms-gestion-proyectos
     ports:
       - "8081:8081"
@@ -43,10 +45,10 @@ services:
       - postgres-db
 
   # ==========================================
-  # CAPA COMPUESTA (BFF)
+  # CAPA COMPUESTA (BFF CSR)
   # ==========================================
   innovatech-bff:
-    build: ./innovatech-bff
+    build: ./innovatech-bff # <-- Coincide con tu carpeta real
     container_name: innovatech-bff
     ports:
       - "8080:8080"
@@ -57,10 +59,10 @@ services:
       - ms-gestion-proyectos
 
   # ==========================================
-  # PUERTA DE ENTRADA (API GATEWAY)
+  # PUERTA DE ENTRADA (API GATEWAY CENTRAL)
   # ==========================================
   api-gateway:
-    build: ./innovatech-gateway # Revisa que coincida con el nombre de tu carpeta
+    build: ./innovatech-api-gateway # <-- Ajustado a tu carpeta real
     container_name: api-gateway
     ports:
       - "8083:8083"
@@ -73,10 +75,10 @@ services:
       - innovatech-bff
 
   # ==========================================
-  # INTERFAZ DE USUARIO (FRONTEND)
+  # INTERFAZ DE USUARIO (FRONTEND NEXT.JS)
   # ==========================================
   innovatech-frontend:
-    build: ./innovatech-frontend
+    build: ./innovatech-frontend # <-- Coincide con tu carpeta real
     container_name: innovatech-frontend
     ports:
       - "3000:3000"
