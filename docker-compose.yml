@@ -44,7 +44,7 @@ services:
     build: ./innovatech-ms-gestion-recursos
     container_name: ms-gestion-recursos
     ports:
-      - "8086:8082" # Redirecciona puerto 8086 externo al 8082 interno de Spring
+      - "8086:8086"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/innovatech_db
       SPRING_DATASOURCE_USERNAME: admin
@@ -75,7 +75,7 @@ services:
       JWT_SECRET: innovatech2026_fullstack3_RichardMoreano
       # Inyecciones de red internas para comunicación inter-contenedor
       PROYECTOS_URL: http://ms-gestion-proyectos:8081
-      RECURSOS_URL: http://ms-gestion-recursos:8082
+      RECURSOS_URL: http://ms-gestion-recursos:8086
       MONITOREO_URL: http://ms-monitoreo-analitica:8084
     depends_on:
       - ms-gestion-proyectos
